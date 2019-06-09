@@ -318,27 +318,25 @@ class Main(tk.Frame):
 
     def graph_task2(self):
         graph = tk.Toplevel()
-        graph.title('Число городов в регионе по году основания с группировкой по региону')
+        graph.title('Число актёров по году рождения с группировкой по лучшему фильму')
         graph.geometry('1366x768')
         graph.resizable(False, False)
 
         f = plt.Figure()
-        regions = [
-            'Nizhny_Novgorod_Oblast',
-            'Chelyabinsk_Oblast',
-            'Irkutsk_Oblast',
-            'Samara_Oblast',
-            'Sverdlovsk_Oblast'
+        films = [
+            'Deadpool',
+            'The Avengers',
+            'The Expendables',
+            'Flight Crew'
         ]
-        for idx, region in enumerate(regions):
-            data = work.suffer[work.suffer['Federal_subject'] == region]
+        for idx, film in enumerate(films):
+            data = work.suffer[work.suffer['popular_movie'] == film]
             print(data)
-            sub = f.add_subplot(1, len(regions), idx + 1)
+            sub = f.add_subplot(1, len(films), idx + 1)
             sub.hist(
-                data['Founded'],
-                bins=list(range(1000, 2200, 200))
+                data['year_of_birth']
             )
-            sub.title.set_text(region)
+            sub.title.set_text(film)
             sub.set_yticks(range(5))
         # f.get_axes()[0].set_yticklabels(range(0, int(1.3e7), int(5e5)))
 
@@ -350,7 +348,7 @@ class Main(tk.Frame):
 
     def graph_task1(self):
         graph = tk.Toplevel()
-        graph.title('Население городов с группировкой по дате основания')
+        graph.title('Число фильмов с группировкой по году рождения')
         graph.geometry('1366x768')
         graph.resizable(False, False)
 
@@ -358,23 +356,23 @@ class Main(tk.Frame):
         sub = f.add_subplot(1, 1, 1)
         prev_dx = 0
         add = {
-            1861: 0.05,
-            2000: 0.35
+            1970: 0.05,
+            9999: 0.35
         }
         xticks = [], []
-        for dx in [1861, 2000]:
-            data = work.suffer[(prev_dx <= work.suffer['Founded']) & (work.suffer['Founded'] < dx)]\
-                .sort_values('Population', ascending=False)
+        for dx in [1970, 9999]:
+            data = work.suffer[(prev_dx <= work.suffer['year_of_birth']) & (work.suffer['year_of_birth'] < dx)]\
+                .sort_values('played_films', ascending=False)
             sub.bar(
                 [x + add[dx] for x in range(data.index.size)],
-                data['Population'],
+                data['played_films'],
                 width=0.2,
-                label='{} отмены крепостного права'.format(dx == 1861 and 'До' or 'После')
+                label='{} 1970 г.'.format(dx == 1970 and 'До' or 'После')
             )
             xticks[0].extend([x + add[dx] for x in range(data.index.size)])
-            xticks[1].extend(data['Town'])
-            sub.set_ylim(top=1.3e7)
-            sub.set_yticks(range(0, int(1.3e7), int(5e5)))
+            xticks[1].extend(data['Actor'])
+            sub.set_ylim(top=500)
+            sub.set_yticks(range(0, int(500), int(25)))
             sub.yaxis.grid(True)
             prev_dx = dx
         sub.set_xticks(xticks[0])
