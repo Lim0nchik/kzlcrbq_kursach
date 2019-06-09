@@ -251,6 +251,12 @@ class Main(tk.Frame):
             command=lambda: self.graph_task2()
         )
         button_task2.pack()
+        button_task3 = tk.Button(
+            popup,
+            text='Категоризированная диаграмма Бокса-Вискера',
+            command=lambda: self.graph_task3()
+        )
+        button_task3.pack()
         button_task4 = tk.Button(
             popup,
             text='Категоризированная диаграмма рассеивания',
@@ -309,6 +315,37 @@ class Main(tk.Frame):
         f.get_axes()[0].title.set_text('Рождённые до 1970 г.')
         f.get_axes()[1].title.set_text('Рождённые после 1970 г.')
         f.get_axes()[0].set_yticklabels(range(0, int(500), int(25)))
+
+        canvas = FigureCanvasTkAgg(f, graph)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        save_button = tk.Button(graph, text='Save to file', command=lambda: self.save_graph(f))
+        save_button.pack(side='top')
+
+    def graph_task3(self):
+        graph = tk.Toplevel()
+        graph.title('Рейтинг лучшего фильма с группировкой по году рождения актёров')
+        graph.geometry('1366x768')
+        graph.resizable(False, False)
+
+        f = plt.Figure()
+        prev_year = 0
+        data = []
+        for year in [1970, 9999]:
+            data.append(
+                work.suffer
+                [(prev_year <= work.suffer['year_of_birth']) & (work.suffer['year_of_birth'] < year)]
+                ['movie_score']
+            )
+        sub = f.add_subplot(1, 1, 1)
+        sub.boxplot(
+            data,
+            labels=[
+                'Рождённые до 1970',
+                'Рождённые после 1970',
+            ]
+        )
+        # f.get_axes()[0].set_yticklabels(range(0, int(1.3e7), int(5e5)))
 
         canvas = FigureCanvasTkAgg(f, graph)
         canvas.draw()
