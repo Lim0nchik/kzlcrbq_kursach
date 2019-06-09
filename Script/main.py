@@ -287,28 +287,28 @@ class Main(tk.Frame):
 
     def graph_task4(self):
         graph = tk.Toplevel()
-        graph.title('Население городов, по убыванию')
+        graph.title('Число фильмов от года рождения')
         graph.geometry('1366x768')
         graph.resizable(False, False)
 
         f = plt.Figure()
         prev_dx = 0
-        for dx in [1861, 2000]:
-            data = work.suffer[(prev_dx <= work.suffer['Founded']) & (work.suffer['Founded'] < dx)]
-            sub = f.add_subplot(1, 2, dx > 1861 and 2 or 1)
+        for dx in [1970, 9999]:
+            data = work.suffer[(prev_dx <= work.suffer['year_of_birth']) & (work.suffer['year_of_birth'] < dx)]
+            sub = f.add_subplot(1, 2, dx == 9999 and 2 or 1)
             sub.scatter(
-                data['Founded'],
-                data['Population']
+                data['year_of_birth'],
+                data['played_films']
             )
-            sub.set_ylim(top=1.3e7)
-            sub.set_yticks(range(0, int(1.3e7), int(5e5)))
+            sub.set_ylim(top=500)
+            sub.set_yticks(range(0, int(500), int(25)))
             sub.set_yticklabels([])
             sub.yaxis.grid(True)
             prev_dx = dx
 
-        f.get_axes()[0].title.set_text('До отмены крепостного права')
-        f.get_axes()[1].title.set_text('После отмены крепостного права')
-        f.get_axes()[0].set_yticklabels(range(0, int(1.3e7), int(5e5)))
+        f.get_axes()[0].title.set_text('Рождённые до 1970 г.')
+        f.get_axes()[1].title.set_text('Рождённые после 1970 г.')
+        f.get_axes()[0].set_yticklabels(range(0, int(500), int(25)))
 
         canvas = FigureCanvasTkAgg(f, graph)
         canvas.draw()
@@ -331,7 +331,6 @@ class Main(tk.Frame):
         ]
         for idx, film in enumerate(films):
             data = work.suffer[work.suffer['popular_movie'] == film]
-            print(data)
             sub = f.add_subplot(1, len(films), idx + 1)
             sub.hist(
                 data['year_of_birth']
@@ -367,7 +366,7 @@ class Main(tk.Frame):
                 [x + add[dx] for x in range(data.index.size)],
                 data['played_films'],
                 width=0.2,
-                label='{} 1970 г.'.format(dx == 1970 and 'До' or 'После')
+                label='Рождённые {} 1970 г.'.format(dx == 1970 and 'до' or 'после')
             )
             xticks[0].extend([x + add[dx] for x in range(data.index.size)])
             xticks[1].extend(data['Actor'])
