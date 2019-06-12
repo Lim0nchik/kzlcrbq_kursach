@@ -1,4 +1,3 @@
-import functools
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -165,7 +164,7 @@ class App(tk.Frame):
     def activity_graph_selector(self) -> None:
         popup = tk.Toplevel()
         popup.title('Выбор графика')
-        popup.geometry('50x50')
+        popup.geometry('300x100+500+300')
 
         def make_on_click(fn):
             return lambda: plot.draw_plot(*fn(self.dataset))

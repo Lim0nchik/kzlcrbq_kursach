@@ -101,12 +101,12 @@ def plot_bar(df: pd.DataFrame) -> typing.Tuple[plt.Figure, str]:
         sub.yaxis.grid(True)
     
     draw_subplot(
-        df[df.actor_year_of_birth < 1970],
+        df[df.actor_year_of_birth < 1970].sort_values('actor_played_movies', ascending=False),
         1,
         'Рождённые до 1970 г.'
     )
     draw_subplot(
-        df[df.actor_year_of_birth >= 1970],
+        df[df.actor_year_of_birth >= 1970].sort_values('actor_played_movies', ascending=False),
         2,
         'Рождённые после 1970 г.'
     )
