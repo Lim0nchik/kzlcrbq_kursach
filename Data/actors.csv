@@ -1,4 +1,4 @@
-Key,Actor,year_of_birth,country,played_films
+actor_best_movie_id,actor_name,actor_year_of_birth,actor_country,actor_played_movies
 1,Josh Brolin,1968,USA,145
 1,Ryan Reynolds,1976,Canada,151
 2,Peter Dinklage,1969,USA,120
