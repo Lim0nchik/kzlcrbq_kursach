@@ -2,6 +2,7 @@ import functools
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import layout
 import data
 import plot
 import config
@@ -21,7 +22,7 @@ class App(tk.Frame):
 
         self.dataset = data.join_from_csv()
         for row in self.dataset.itertuples(index=False):
-            self.tree.insert('', tk.END, values=row)
+            self.tree.insert('', tk.END, values=App.dataset_row_slice(row))
 
     def init_toolbar(self, icons: dict) -> tk.Frame:
         toolbar = tk.Frame(bg=config.color_bg, bd=2)
@@ -33,10 +34,13 @@ class App(tk.Frame):
             'image'
         ]
 
+        def on_add_record():
+            self.activity_record_edit(lambda values: self.add_record(values))
+
         buttons = [
-            ('Добавить', self.add_item, icons['add']),
+            ('Добавить', on_add_record, icons['add']),
             ('Удалить', self.delete_item, icons['delete']),
-            ('Изменить', self.change_actor, icons['edit']),
+            ('Изменить', self.activity_record_edit, icons['edit']),
             ('Сохранить', self.save, icons['save']),
             ('Графики', self.activity_graph_selector, icons['plot_view']),
             ('Поиск', lambda: print('Not implemented'), icons['search'])
@@ -53,6 +57,10 @@ class App(tk.Frame):
             ).pack(side=tk.LEFT)
 
         return toolbar
+
+    @staticmethod
+    def dataset_row_slice(row) -> typing.Tuple:
+        return row[0:4] + row[6:]
 
     def init_tree(self, root: tk.Tk) -> ttk.Treeview:
         tree = ttk.Treeview(root, height=30, show='headings')
@@ -71,7 +79,7 @@ class App(tk.Frame):
             tree.column(col, width=values[0], anchor=tk.CENTER)
             tree.heading(col, text=values[1])
 
-        tree.bind('<Double-Button-1>', lambda event: self.change_actor())
+        tree.bind('<Double-Button-1>', lambda event: self.activity_record_edit(lambda x: print(x)))
 
         tree.pack()
         return tree
@@ -79,62 +87,49 @@ class App(tk.Frame):
     def save(self) -> None:
         data.save_to_csv(self.dataset)
 
-    def change_actor(self):
-        top = tk.Toplevel()
-        top.title('Изменить/добавить актёра')
-        top.geometry('520x280+400+300')
-        top.resizable(False, False)
+    def activity_record_edit(self, callback: typing.Callable) -> None:
+        popup = tk.Toplevel()
+        popup.title('Параметры актёра')
+        popup.geometry('520x280+400+300')
+        popup.resizable(False, False)
 
-        label_name = tk.Label(top, text='Имя:')
-        label_name.place(x=50, y=50)
-        entry_name = ttk.Entry(top)
-        entry_name.place(x=200, y=50)
+        def make_label(params: dict) -> None:
+            label = tk.Label(popup, text=params['text'])
+            label.place(x=params['x'], y=params['y'])
 
-        label_year = tk.Label(top, text='Год рождения:')
-        label_year.place(x=50, y=80)
-        entry_year = ttk.Entry(top)
-        entry_year.place(x=200, y=80)
+        def make_entry(params: dict) -> tk.Entry:
+            entry = tk.Entry(popup)
+            entry.place(x=params['x'], y=params['y'])
+            return entry
 
-        label_country = tk.Label(top, text='Страна:')
-        label_country.place(x=50, y=110)
-        entry_country = ttk.Entry(top)
-        entry_country.place(x=200, y=110)
+        labels = {
+            k: make_label(v[0]) for k, v in layout.activity_record_edit.items()
+        }
+        entries = {
+            k: make_entry(v[1]) for k, v in layout.activity_record_edit.items()
+        }
 
-        label_films = tk.Label(top, text='Число фильмов:')
-        label_films.place(x=50, y=140)
-        entry_films = ttk.Entry(top)
-        entry_films.place(x=200, y=140)
+        row = self.tree.item(self.tree.focus())['values']
+        for key, value in zip(self.tree['columns'], row):
+            entries[key].insert(0, value)
 
-        label_best_film = tk.Label(top, text='Самый популярный фильм:')
-        label_best_film.place(x=50, y=170)
-        entry_best_film = ttk.Entry(top)
-        entry_best_film.place(x=200, y=170)
+        def on_cancel():
+            popup.destroy()
+            callback(None)
 
-        label_best_score = tk.Label(top, text='Оценка самого популярного фильма:')
-        label_best_score.place(x=50, y=200)
-        entry_best_score = ttk.Entry(top)
-        entry_best_score.place(x=200, y=200)
+        def on_ok():
+            values = {k: v.get() for k, v in entries.items()}
+            popup.destroy()
+            callback(values)
 
-        self.find(entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score, self.tree)
-
-        btn_cancel = ttk.Button(top, text='Закрыть', command=top.destroy)
+        btn_cancel = ttk.Button(popup, text='Отмена', command=on_cancel)
         btn_cancel.place(x=300, y=240)
 
-        btn_ok = ttk.Button(top, text='Изменить')
+        btn_ok = ttk.Button(popup, text='ОК', command=on_ok)
         btn_ok.place(x=220, y=240)
-        btn_ok.bind('<Button-1>', lambda event: self.change_item(
-            entry_name, entry_year, entry_country,
-            entry_films, entry_best_film, entry_best_score, self.tree
-        ))
-        btn_ok = ttk.Button(top, text='Добавить')
-        btn_ok.place(x=140, y=240)
-        btn_ok.bind('<Button-1>', lambda event: self.add_item(
-            entry_name, entry_year, entry_country,
-            entry_films, entry_best_film, entry_best_score
-        ))
 
-        top.grab_set()
-        top.focus_set()
+        popup.grab_set()
+        popup.focus_set()
 
     def delete_item(self):
         item = self.tree.focus()
@@ -142,7 +137,8 @@ class App(tk.Frame):
         work.delete_record(self.tree.index(item))
         self.tree.delete(item)
 
-    def find(self, entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score, tree):
+    @staticmethod
+    def find(entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score, tree):
         values = tree.item(tree.focus())["values"]
         print(values)
         entries_list = [entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score]
@@ -195,34 +191,14 @@ class App(tk.Frame):
         except ValueError:
             messagebox.showerror("Invalid input", "Input are not valid string or number")
 
-    def add_item(self, entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score):
-        try:
-            actor = invalid.invalid_text(entry_name.get())
-            print(actor)
-            year = invalid.invalid_int(entry_year.get())
-            print(year)
-            country = invalid.invalid_text(entry_country.get())
-            print(country)
-            films = invalid.invalid_int(entry_films.get())
-            print(films)
-            best_film = invalid.invalid_text(entry_best_film.get())
-            print(best_film)
-            best_score = invalid.invalid_float(entry_best_score.get())
-            print(best_score)
-
-            work.insert_record({
-                "Actor": actor,
-                "year_of_birth": year,
-                "country": country,
-                "played_films": films,
-                "popular_movie": best_film,
-                "movie_score": best_score
-            })
-            self.tree.insert("", tk.END, values=(actor, year, country, films, best_film, best_score))
-
-            messagebox.showinfo(title='Успешно', message='Successful!!')
-        except ValueError:
-            messagebox.showerror("Invalid input", "Input are not valid string or number")
+    # def add_item(self, entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score):
+    def add_record(self, entries: dict) -> None:
+        actor = self.dataset[self.dataset.actor_name == entries['actor_name']]
+        movie = self.dataset[self.dataset.movie_name == entries['movie_name']]
+        if actor.size == movie.size == 0:
+            self.tree.insert("", tk.END, values=tuple(entries.values()))
+            self.dataset = data.insert_record(self.dataset, entries)
+        messagebox.showinfo(title='Успешно', message='Successful!!')
 
     def activity_graph_selector(self) -> None:
         popup = tk.Toplevel()
@@ -260,7 +236,7 @@ def main():
     app = App(root_window)
     app.pack()
     root_window.title("Актёры")
-    root_window.geometry("950x550+300+150")
+    root_window.geometry("1125x550+300+150")
     root_window.resizable(False, False)
     root_window.mainloop()
 

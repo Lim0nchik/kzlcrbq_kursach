@@ -45,6 +45,13 @@ def edit_record(df: pd.DataFrame, actor_values, movie_values) -> None:
     df.loc[df.movie_id == movie_values[0], movie_columns] = movie_values
 
 
+def insert_record(df: pd.DataFrame, values: dict) -> pd.DataFrame:
+    movie_id = df['movie_id'].max() + 1
+    values['movie_id'] = movie_id
+    values['actor_best_movie_id'] = movie_id
+    return df.append(values, ignore_index=True)
+
+
 if __name__ == '__main__':
     data = join_from_csv()
     edit_record(
