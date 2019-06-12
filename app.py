@@ -28,20 +28,23 @@ class App(tk.Frame):
         toolbar = tk.Frame(bg=config.color_bg, bd=2)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
+        def on_add_record():
+            self.activity_record_edit(lambda values: self.add_record(values))
+
+        def on_edit_record():
+            self.activity_record_edit(lambda values: self.edit_record(values))
+
         button_params = [
             'text',
             'command',
             'image'
         ]
 
-        def on_add_record():
-            self.activity_record_edit(lambda values: self.add_record(values))
-
         buttons = [
             ('Добавить', on_add_record, icons['add']),
             ('Удалить', self.delete_item, icons['delete']),
-            ('Изменить', self.activity_record_edit, icons['edit']),
-            ('Сохранить', self.save, icons['save']),
+            ('Изменить', on_edit_record, icons['edit']),
+            ('Сохранить', self.dataset_save, icons['save']),
             ('Графики', self.activity_graph_selector, icons['plot_view']),
             ('Поиск', lambda: print('Not implemented'), icons['search'])
         ]
@@ -84,7 +87,7 @@ class App(tk.Frame):
         tree.pack()
         return tree
 
-    def save(self) -> None:
+    def dataset_save(self) -> None:
         data.save_to_csv(self.dataset)
 
     def activity_record_edit(self, callback: typing.Callable) -> None:
@@ -137,68 +140,29 @@ class App(tk.Frame):
         work.delete_record(self.tree.index(item))
         self.tree.delete(item)
 
-    @staticmethod
-    def find(entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score, tree):
-        values = tree.item(tree.focus())["values"]
-        print(values)
-        entries_list = [entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score]
-        for entry, val in zip(entries_list, values):
-            # entry.delete(0, tk.END)
-            # print(entry.delete(0, tk.END))
-            entry.insert(0, val)
-        # print(val)
-
-    def change_item(self, entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score, tree):
-        try:
-
-            item = tree.focus()
-            index = tree.index(item)
-            # values = tree.item(item)["values"]
-            # print(values)
-            # entries_list = [entry_town, entry_federal, entry_founded, entry_population, entry_area]
-            # for entry, val in zip(entries_list, values):
-            #     entry.delete(0, tk.END)
-            #     entry.insert(0, val)
-
-            print(item)
-            print(index)
-
-            actor = invalid.invalid_text(entry_name.get())
-            print(actor)
-            year = invalid.invalid_int(entry_year.get())
-            print(year)
-            country = invalid.invalid_text(entry_country.get())
-            print(country)
-            films = invalid.invalid_int(entry_films.get())
-            print(films)
-            best_film = invalid.invalid_text(entry_best_film.get())
-            print(best_film)
-            best_score = invalid.invalid_float(entry_best_score.get())
-            print(best_score)
-
-            work.insert_record({
-                "Actor": actor,
-                "year_of_birth": year,
-                "country": country,
-                "played_films": films,
-                "popular_movie": best_film,
-                "movie_score": best_score
-            })
-            # work.update_record(index, (town, federal, founded, population, area))
-            tree.item(item, values=(actor, year, country, films, best_film, best_score))
-
-            messagebox.showinfo(title='Успешно', message='Successful!!')
-        except ValueError:
-            messagebox.showerror("Invalid input", "Input are not valid string or number")
-
-    # def add_item(self, entry_name, entry_year, entry_country, entry_films, entry_best_film, entry_best_score):
     def add_record(self, entries: dict) -> None:
         actor = self.dataset[self.dataset.actor_name == entries['actor_name']]
         movie = self.dataset[self.dataset.movie_name == entries['movie_name']]
         if actor.size == movie.size == 0:
-            self.tree.insert("", tk.END, values=tuple(entries.values()))
             self.dataset = data.insert_record(self.dataset, entries)
+            self.tree.insert("", tk.END, values=tuple(entries.values()))
         messagebox.showinfo(title='Успешно', message='Successful!!')
+
+    def edit_record(self, entries: dict) -> None:
+        actor = self.dataset[self.dataset.actor_name == entries['actor_name']]
+        movie = self.dataset[self.dataset.movie_name == entries['movie_name']]
+        if actor.size == 0:
+            messagebox.showerror(title='Ошибка', message='Актёр не найден')
+        elif movie.size == 0:
+            messagebox.showerror(title='Ошибка', message='Фильм не найден')
+        else:
+            data.edit_record(
+                self.dataset,
+                list(entries.values())[:4] + [actor.iloc[0]['actor_best_movie_id']],
+                list(entries.values())[4:] + [movie.iloc[0]['movie_id']]
+            )
+            self.tree.item(self.tree.focus(), values=tuple(entries.values()))
+            messagebox.showinfo(title='Успешно', message='Successful!!')
 
     def activity_graph_selector(self) -> None:
         popup = tk.Toplevel()
