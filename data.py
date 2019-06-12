@@ -52,6 +52,10 @@ def insert_record(df: pd.DataFrame, values: dict) -> pd.DataFrame:
     return df.append(values, ignore_index=True)
 
 
+def delete_record(df: pd.DataFrame, actor_name: str) -> None:
+    df.drop(df[df.actor_name == actor_name].index, inplace=True)
+
+
 if __name__ == '__main__':
     data = join_from_csv()
     edit_record(

@@ -28,12 +28,6 @@ class App(tk.Frame):
         toolbar = tk.Frame(bg=config.color_bg, bd=2)
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
-        def on_add_record():
-            self.activity_record_edit(lambda values: self.add_record(values))
-
-        def on_edit_record():
-            self.activity_record_edit(lambda values: self.edit_record(values))
-
         button_params = [
             'text',
             'command',
@@ -41,16 +35,15 @@ class App(tk.Frame):
         ]
 
         buttons = [
-            ('Добавить', on_add_record, icons['add']),
-            ('Удалить', self.delete_item, icons['delete']),
-            ('Изменить', on_edit_record, icons['edit']),
+            ('Добавить', self.on_add_record, icons['add']),
+            ('Удалить', self.delete_record, icons['delete']),
+            ('Изменить', self.on_edit_record, icons['edit']),
             ('Сохранить', self.dataset_save, icons['save']),
             ('Графики', self.activity_graph_selector, icons['plot_view']),
             ('Поиск', lambda: print('Not implemented'), icons['search'])
         ]
 
         for btn in buttons:
-            print(dict(zip(button_params, btn)))
             tk.Button(
                 toolbar,
                 bg=config.color_bg,
@@ -82,7 +75,7 @@ class App(tk.Frame):
             tree.column(col, width=values[0], anchor=tk.CENTER)
             tree.heading(col, text=values[1])
 
-        tree.bind('<Double-Button-1>', lambda event: self.activity_record_edit(lambda x: print(x)))
+        tree.bind('<Double-Button-1>', lambda event: self.on_edit_record)
 
         tree.pack()
         return tree
@@ -134,11 +127,11 @@ class App(tk.Frame):
         popup.grab_set()
         popup.focus_set()
 
-    def delete_item(self):
-        item = self.tree.focus()
-        print(item)
-        work.delete_record(self.tree.index(item))
-        self.tree.delete(item)
+    def on_add_record(self):
+        self.activity_record_edit(lambda values: self.add_record(values))
+
+    def on_edit_record(self):
+        self.activity_record_edit(lambda values: self.edit_record(values))
 
     def add_record(self, entries: dict) -> None:
         actor = self.dataset[self.dataset.actor_name == entries['actor_name']]
@@ -163,6 +156,11 @@ class App(tk.Frame):
             )
             self.tree.item(self.tree.focus(), values=tuple(entries.values()))
             messagebox.showinfo(title='Успешно', message='Successful!!')
+
+    def delete_record(self):
+        item = self.tree.focus()
+        data.delete_record(self.dataset, self.tree.item(item)['values'][0])
+        self.tree.delete(item)
 
     def activity_graph_selector(self) -> None:
         popup = tk.Toplevel()
